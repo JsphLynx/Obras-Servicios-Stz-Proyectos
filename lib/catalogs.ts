@@ -1,0 +1,1 @@
+export const tiposEmplazamiento=['EDIFICIO','VIA','PASEO','ESPACIO_PUBLICO','PARQUE','INFRAESTRUCTURA','INSTALACION','OTRO'];

@@ -1,0 +1,14 @@
+'use client';
+import {useEffect,useState} from 'react';
+import Dashboard from './dashboard';
+import {apiFetch,mode} from '@/lib/stz/browser';
+type Session={userId:string;email:string;role:string;canWrite:boolean};
+export default function AccessShell(){
+ const [session,setSession]=useState<Session|null>(null),[error,setError]=useState(''),[users,setUsers]=useState<any[]|null>(null),[busy,setBusy]=useState(false);
+ async function reload(){setError('');try{const r=await apiFetch('/api/session'),j=await r.json() as any;if(!r.ok)throw Error(j.error);setSession(j);}catch(e){setError((e as Error).message);}}
+ useEffect(()=>{reload()},[]);
+ async function list(){const r=await apiFetch('/api/users');const j=await r.json() as any;if(!r.ok)throw Error(j.error);setUsers(j);}
+ async function update(userId:string,role:string){setBusy(true);setError('');try{const r=await apiFetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,role})});if(!r.ok)throw Error((await r.json() as any).error);await list();}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
+ if(!session||['PENDIENTE','BLOQUEADO'].includes(session.role))return <main className="access-entry"><h1>Obras y Servicios · Santurtzi</h1><p>{error||(!session?'Comprobando acceso…':'Tu identidad está registrada. El administrador debe autorizar tu acceso.')}</p><a className="button" href="/signin-with-chatgpt?return_to=%2F" target="_top">Iniciar sesión</a><button className="button secondary" onClick={reload}>Comprobar acceso</button></main>;
+ return <><div className={'environment-bar '+(mode()==='practice'?'practice':'')}><strong>{mode()==='practice'?'PRÁCTICAS · Datos sintéticos editables':'EJEMPLOS PROTEGIDOS · Solo consulta'}</strong><span>{session.email} · {session.role}</span><a href={mode()==='practice'?'/':'/?environment=practice'}>{mode()==='practice'?'Consultar ejemplos':'Entrar en prácticas'}</a>{session.role==='ADMIN'&&<button onClick={()=>users?setUsers(null):list().catch(e=>setError(e.message))}>Usuarios y permisos</button>}</div>{error&&<p className="error" role="alert">{error}</p>}{users&&<section className="access-users"><h2>Permisos de la aplicación</h2><p>Comparte primero el acceso privado desde Sites. Después del primer inicio de sesión, el usuario aparecerá pendiente aquí. Editor: operaciones en prácticas. Lector: consulta. Los ejemplos originales permanecen protegidos.</p>{users.map(u=><label key={u.user_id}>{u.email}<select aria-label={'Perfil de '+u.email} value={u.role} disabled={busy||u.role==='ADMIN'} onChange={e=>update(u.user_id,e.target.value)}>{['PENDIENTE','ADMIN','EDITOR','LECTOR','BLOQUEADO'].map(r=><option key={r} disabled={['PENDIENTE','ADMIN'].includes(r)}>{r}</option>)}</select></label>)}</section>}<Dashboard canWrite={session.canWrite}/></>;
+}

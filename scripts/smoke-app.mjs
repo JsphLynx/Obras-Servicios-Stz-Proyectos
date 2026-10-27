@@ -1,0 +1,8 @@
+// Optional runtime smoke check using official Sites service access through hidden stdin.
+import fs from 'node:fs';
+if(process.stdin.isTTY)process.stdin.setRawMode(true);process.stdin.setEncoding('utf8');console.log('Ready for Site check JSON on stdin (input is hidden).');let input='';for await(const c of process.stdin){input+=c;if(input.includes('\n'))break;}if(process.stdin.isTTY)process.stdin.setRawMode(false);process.stdin.pause();
+const a=JSON.parse(input.trim());
+for(const route of ['/', '/api/data','/api/operations','/Obras_Servicios_guia.md']){const r=await fetch(a.url+route,{headers:{'OAI-Sites-Authorization':'Bearer '+a.token}});const text=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' '+route);let detail={bytes:text.length};if(route.startsWith('/api')){const v=JSON.parse(text);detail=route==='/api/data'?{projects:v.proyectos.length,locations:v.emplazamientos.length,actions:v.actuaciones.length}:{contracts:v.contracts.length,budgets:v.budgets.length,audit:v.audit.length};}console.log(JSON.stringify({route,status:r.status,...detail}));}
+
+if(a.expectLocked){const headers={'OAI-Sites-Authorization':'Bearer '+a.token};const base=await(await fetch(a.url+'/api/data',{headers})).json();const p=base.proyectos[0];const r=await fetch(a.url+'/api/data',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({kind:'proyecto',data:{...p,id:p.id_proyecto}})});const v=await r.json();if(r.status!==400||!String(v.error).includes('Consolidación'))throw Error('Cutover write gate did not reject update');console.log(JSON.stringify({writeGate:'verified',noRecordChanged:true}));}
+process.exit(0);

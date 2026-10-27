@@ -1,0 +1,11 @@
+# Configure only on the server; never commit the completed file.
+DATABASE_URL=
+PRACTICE_DATABASE_URL=
+AUTH_DATABASE_URL=
+STZ_EXAMPLES_BRANCH_ID=
+STZ_PRACTICE_BRANCH_ID=
+STZ_OWNER_EMAIL=
+# QA only: explicit, separate hosts for integration scenarios.
+QA_EXAMPLES_HOST=
+QA_PRACTICE_HOST=
+QA_AUTH_HOST=
